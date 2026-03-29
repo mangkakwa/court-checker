@@ -2,7 +2,7 @@ name: Court Checker
 
 on:
   schedule:
-      - cron: '0 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 * * *'
+      - cron: '0 1-15 * * *'
         workflow_dispatch:
 
         jobs:
@@ -10,12 +10,17 @@ on:
               runs-on: ubuntu-latest
                   steps:
                         - uses: actions/checkout@v3
+
                               - uses: actions/setup-python@v4
                                       with:
                                                 python-version: '3.11'
-                                                      - run: pip install requests pytz
-                                                            - run: python court_checker.py
-                                                                    env:
-                                                                              TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-                                                                                        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-                                                                                                  PHPSESSID: ${{ secrets.PHPSESSID }}
+
+                                                      - name: Install packages
+                                                              run: pip install requests pytz
+
+                                                                    - name: Run court checker
+                                                                            run: python court_checker.py
+                                                                                    env:
+                                                                                              TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+                                                                                                        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+                                                                                                                  PHPSESSID: ${{ secrets.PHPSESSID }}
