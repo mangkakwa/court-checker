@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: "0 1-15 * * *"
   workflow_dispatch:
+  push:               # ← add this line
+  branches: [main]  # ← and this line
 
 jobs:
   check:
