@@ -2,25 +2,25 @@ name: Court Checker
 
 on:
   schedule:
-      - cron: '0 1-15 * * *'
-        workflow_dispatch:
+    - cron: "0 1-15 * * *"
+  workflow_dispatch:
 
-        jobs:
-          check:
-              runs-on: ubuntu-latest
-                  steps:
-                        - uses: actions/checkout@v3
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-                              - uses: actions/setup-python@v4
-                                      with:
-                                                python-version: '3.11'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-                                                      - name: Install packages
-                                                              run: pip install requests pytz
+      - name: Install packages
+        run: pip install requests pytz
 
-                                                                    - name: Run court checker
-                                                                            run: python court_checker.py
-                                                                                    env:
-                                                                                              TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-                                                                                                        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-                                                                                                                  PHPSESSID: ${{ secrets.PHPSESSID }}
+      - name: Run court checker
+        run: python court_checker.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PHPSESSID: ${{ secrets.PHPSESSID }}
