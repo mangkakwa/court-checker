@@ -8,7 +8,7 @@ TELEGRAM_TOKEN   = os.environ.get("TELEGRAM_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 PHPSESSID        = os.environ.get("PHPSESSID", "")
 
-DAYS_AHEAD = 7
+DAYS_AHEAD = 14
 BANGKOK    = pytz.timezone("Asia/Bangkok")
 
 WATCH_COURTS = ["North-1","North-2","North-3","Center-1","Center-2","South-1","South-2","South-3","G North-1","G North-2","G North-3","G Center-1","G Center-2","G Center-3","G South-1","G South-2","G South-3"]
