@@ -191,7 +191,7 @@ def scan_bkkspin(today, dates, storage_state):
                 next_week = calendar.get_by_role("button", name="Next week", exact=True)
                 if not next_week.is_enabled():
                     return
-                next_week.click()
+                next_week.press("Enter")
                 week += timedelta(days=7)
             day_number = page.locator("span:nth-child(2)").filter(
                 has_text=re.compile(rf"^0?{day.day}$")
@@ -203,7 +203,7 @@ def scan_bkkspin(today, dates, storage_state):
             if not button.is_enabled():
                 continue
             if not button.evaluate("element => element.classList.contains('text-white')"):
-                button.click()
+                button.press("Enter")
             date_label = re.compile(rf"^{day:%a} 0?{day.day} {day:%b %Y}$")
             log.info("Bangkok Spin | waiting for the %s grid", day)
             grid.get_by_text(date_label).wait_for()
