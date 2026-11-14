@@ -94,3 +94,67 @@ def check_location(session, day, location):
         match = TIME_PATTERN.fullmatch(label.get_text(strip=True)) if label else None
         if not match or int(match.group(1)) not in WATCH_HOURS:
             continue
+
+        time_url = booking_link(slot)
+        detail = read_booking_page(session, time_url)
+        courts = detail.select_one("#step-court")
+        if courts is None or not courts.select_one(".court-tile"):
+            raise BookingError("Court picker missing on the selected time page")
+
+        names = [
+            tile["aria-label"]
+            for tile in courts.select(
+                'a.court-tile[href][aria-label]:not(.is-disabled):not([aria-disabled="true"])'
+            )
+        ]
+        if names:
+            heading = courts.select_one(".dash-label")
+            price = PRICE_PATTERN.search(heading.get_text(" ", strip=True)) if heading else None
+            rate = price.group(1) if price else ""
+            results.append((label.get_text(strip=True), names, rate, time_url))
+    return results
+
+
+def send_telegram(token, chat_id, message):
+    try:
+        response = requests.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            json={
+                "chat_id": chat_id,
+                "text": message,
+                "parse_mode": "HTML",
+                "link_preview_options": {"is_disabled": True},
+            },
+            timeout=15,
+        )
+        if response.status_code == 200 and response.json().get("ok"):
+            return True
+        log.error("Telegram rejected the alert (HTTP %s)", response.status_code)
+    except (requests.RequestException, ValueError) as exc:
+        log.error("Telegram request failed (%s)", type(exc).__name__)
+    return False
+
+
+def run_check():
+    cookie = os.getenv("CRYSTAL_COOKIE", "").strip()
+    token = os.getenv("TELEGRAM_TOKEN", "").strip()
+    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+    if not all((cookie, token, chat_id)):
+        log.error("Set CRYSTAL_COOKIE, TELEGRAM_TOKEN and TELEGRAM_CHAT_ID.")
+        return 1
+
+    now = datetime.now(BANGKOK)
+    log.info("Checking Bangkok booking dates from %s", now.strftime("%Y-%m-%d %H:%M"))
+    failed = False
+    with requests.Session() as session:
+        session.headers.update({
+            "Cookie": cookie,
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "text/html",
+        })
+        for day in scan_dates(now.date()):
+            for location, name in LOCATIONS.items():
+                try:
+                    slots = check_location(session, day, location)
+                except LoginRequired as exc:
+                    log.error("%s", exc)
