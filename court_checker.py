@@ -159,7 +159,7 @@ def scan_bkkspin(today, dates, storage_state):
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
-        context = browser.new_context(storage_state=json.loads(storage_state), timezone_id="Asia/Bangkok")
+        context = browser.new_context(storage_state=json.loads(storage_state), timezone_id="Asia/Bangkok", locale="en-GB")
         page = context.new_page()
         page.set_default_timeout(15000)
         log.info("Bangkok Spin | opening reservation page")
@@ -193,12 +193,17 @@ def scan_bkkspin(today, dates, storage_state):
                     return
                 next_week.click()
                 week += timedelta(days=7)
-            day_button = re.compile(rf"^{day:%a}\s+0?{day.day}$", re.IGNORECASE)
-            button = calendar.get_by_role("button", name=day_button)
-            button.wait_for()
+            day_number = page.locator("span:nth-child(2)").filter(
+                has_text=re.compile(rf"^0?{day.day}$")
+            )
+            button = calendar.locator(".grid-cols-7 > button").filter(has=day_number)
+            if button.count() != 1:
+                raise BookingError(f"Bangkok Spin could not identify calendar day {day}")
+            log.info("Bangkok Spin | found calendar button for %s", day)
             if not button.is_enabled():
                 continue
-            button.click()
+            if not button.evaluate("element => element.classList.contains('text-white')"):
+                button.click()
             date_label = re.compile(rf"^{day:%a} 0?{day.day} {day:%b %Y}$")
             log.info("Bangkok Spin | waiting for the %s grid", day)
             grid.get_by_text(date_label).wait_for()
