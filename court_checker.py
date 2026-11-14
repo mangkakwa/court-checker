@@ -188,7 +188,8 @@ def scan_bkkspin(today, dates, storage_state):
         for day in dates:
             log.info("Bangkok Spin | selecting %s", day)
             while day >= week + timedelta(days=7):
-                next_week = calendar.get_by_role("button", name="Next week", exact=True)
+                log.info("Bangkok Spin | advancing calendar week from %s", week)
+                next_week = calendar.locator("button[aria-label]").nth(1)
                 if not next_week.is_enabled():
                     return
                 next_week.dispatch_event("click")
