@@ -158,3 +158,27 @@ def run_check():
                     slots = check_location(session, day, location)
                 except LoginRequired as exc:
                     log.error("%s", exc)
+
+                    send_telegram(token, chat_id, str(exc))
+                    return 1
+                except BookingError as exc:
+                    log.error("%s | %s | %s", day, name, exc)
+                    failed = True
+                    continue
+
+                log.info("%s | %s | %s available times", day, name, len(slots))
+                if slots:
+                    lines = [f"<b>{name} · {day:%a %d %b %Y}</b>"]
+                    for hour, courts, price, url in slots:
+                        rate = f" · ฿{price}/hr" if price else ""
+                        lines.append(
+                            f'<a href="{escape(url)}">{hour}</a> · '
+                            f'{escape(", ".join(courts))}{rate}'
+                        )
+                    if not send_telegram(token, chat_id, "\n".join(lines)):
+                        failed = True
+    return int(failed)
+
+
+if __name__ == "__main__":
+    raise SystemExit(run_check())
