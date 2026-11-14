@@ -15,9 +15,18 @@ jobs:
           python-version: "3.11"
       - name: Install packages
         run: pip install requests pytz beautifulsoup4
+      - name: Install Bangkok Spin browser
+        if: env.BKKSPIN_STORAGE_STATE != ''
+        continue-on-error: true
+        env:
+          BKKSPIN_STORAGE_STATE: ${{ secrets.BKKSPIN_STORAGE_STATE }}
+        run: |
+          pip install 'playwright>=1.51,<2'
+          python -m playwright install --with-deps chromium
       - name: Run checker
         run: python court_checker.py
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           CRYSTAL_COOKIE: ${{ secrets.CRYSTAL_COOKIE }}
+          BKKSPIN_STORAGE_STATE: ${{ secrets.BKKSPIN_STORAGE_STATE }}
