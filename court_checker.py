@@ -162,23 +162,31 @@ def scan_bkkspin(today, dates, storage_state):
         context = browser.new_context(storage_state=json.loads(storage_state), timezone_id="Asia/Bangkok")
         page = context.new_page()
         page.set_default_timeout(15000)
-        page.goto(BKKSPIN_URL, wait_until="domcontentloaded")
+        log.info("Bangkok Spin | opening reservation page")
+        response = page.goto(BKKSPIN_URL, wait_until="domcontentloaded")
+        log.info("Bangkok Spin | page response HTTP %s", response.status if response else "unknown")
+        if response and response.status >= 400:
+            raise BookingError(f"Bangkok Spin reservation returned HTTP {response.status}")
+        log.info("Bangkok Spin | waiting for sign-in redirect or booking grid")
         page.wait_for_function(
             "location.pathname === '/login' || !!document.querySelector('#step-grid-heading')"
         )
         if urlsplit(page.url).path == "/login":
             raise LoginRequired("Bangkok Spin requires sign-in. Refresh BKKSPIN_STORAGE_STATE.")
+        log.info("Bangkok Spin | booking grid loaded")
         reject = page.get_by_role("button", name=re.compile(r"Reject all|ปฏิเสธทั้งหมด", re.I))
         if reject.is_visible():
             reject.click()
         english = page.get_by_role("button", name="English", exact=True)
         if english.is_visible():
+            log.info("Bangkok Spin | switching booking grid to English")
             english.click()
 
         calendar = page.locator('section[aria-labelledby="step-date-heading"]')
         grid = page.locator('section[aria-labelledby="step-grid-heading"]')
         week = today - timedelta(days=today.weekday())
         for day in dates:
+            log.info("Bangkok Spin | selecting %s", day)
             while day >= week + timedelta(days=7):
                 next_week = calendar.get_by_role("button", name="Next week", exact=True)
                 if not next_week.is_enabled():
@@ -190,6 +198,7 @@ def scan_bkkspin(today, dates, storage_state):
                 continue
             button.click()
             date_label = re.compile(rf"^{day:%a} 0?{day.day} {day:%b %Y}$")
+            log.info("Bangkok Spin | waiting for the %s grid", day)
             grid.get_by_text(date_label).wait_for()
             grid.locator('button[id^="slot-"]').first.wait_for()
             yield day, parse_bkkspin_grid(grid.inner_html())
@@ -312,6 +321,9 @@ def run_check():
         except LoginRequired as exc:
             log.error("%s", exc)
             login_errors.append(str(exc))
+        except BookingError as exc:
+            log.error("%s", exc)
+            failed = True
         except Exception as exc:
             # Keep Crystal Sports results deliverable if the Bangkok Spin browser fails.
             log.error("Bangkok Spin check failed (%s)", type(exc).__name__)
