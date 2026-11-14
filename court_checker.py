@@ -193,7 +193,9 @@ def scan_bkkspin(today, dates, storage_state):
                     return
                 next_week.click()
                 week += timedelta(days=7)
-            button = calendar.get_by_role("button", name=f"{day:%a} {day.day}", exact=True)
+            day_button = re.compile(rf"^{day:%a}\s+0?{day.day}$", re.IGNORECASE)
+            button = calendar.get_by_role("button", name=day_button)
+            button.wait_for()
             if not button.is_enabled():
                 continue
             button.click()
